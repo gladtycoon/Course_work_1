@@ -24,10 +24,8 @@ def get_greeting_by_time(user_input_date: str) -> str:
         return "Ошибка формата даты"
 
 
-def read_card_data_from_excel() -> DataFrame:
+def read_card_data_from_excel(file_path) -> DataFrame|None:
     """Чтение данных из Excel файла"""
-    BASE_DIR = Path(__file__).resolve().parent.parent
-    file_path = BASE_DIR / "data/operations.xlsx"
     try:
         df = pd.read_excel(file_path)
         return df
@@ -88,4 +86,4 @@ def get_top_transactions(df: DataFrame, n: int = 5) -> list[dict]:
         })
     return result
 
-# 2026-02-06 17:00:00
+# 2026-02-07 17:00:00
