@@ -1,15 +1,34 @@
-import json
-from unittest.mock import patch, mock_open
+import pandas as pd
 
-from src.views import request_currency_data
+from src.services import increased_cashback
 
 
-def test_request_currency_data():
-    user_settings_data = json.dumps({
-        "user_currencies": ["USD", "EUR"],
-        "user_stocks": ["AAPL", "AMZN", "GOOGL", "MSFT", "TSLA"]
-    })
-    with patch("builtins.open", mock_open(read_data=user_settings_data)):
-        with patch("requests.get") as mock_request:
-            mock_request.return_value.json.return_value = {'Valute':{'USD':{'Value': 80.001}}}
-            assert request_currency_data() == [{'currency': 'USD', 'rate': 80.001}]
+def test_increased_cashback_success(sample_dataframe):
+    """Тест: успешный расчёт кэшбэка за январь 2021"""
+    result = increased_cashback(sample_dataframe, 2021, 1)
+
+    # Превращаем Series в словарь
+    result_dict = result.to_dict()
+
+    expected = {"Супермаркеты": -1500, "Транспорт": -300, "Рестораны": -1000}
+
+    assert result_dict == expected
+
+
+def test_increased_cashback_no_data_for_month(sample_dataframe):
+    """Тест: нет данных за указанный месяц"""
+    result = increased_cashback(sample_dataframe, 2021, 6)
+    assert result == {}
+
+
+def test_increased_cashback_empty_dataframe():
+    """Тест: пустой датафрейм"""
+    empty_df = pd.DataFrame()
+    result = increased_cashback(empty_df, 2021, 1)
+    assert result == {}
+
+
+def test_increased_cashback_none_dataframe():
+    """Тест: None вместо датафрейма"""
+    result = increased_cashback(None, 2021, 1)
+    assert result == {}
