@@ -1,14 +1,16 @@
-import os, json
-import pandas as pd
-from pathlib import Path
 import datetime
+import json
+from pathlib import Path
 
-
-from src.utils import (get_top_transactions, process_card_data,
-                       read_card_data_from_excel, request_currency_data,
-                       request_stocks_data)
-from src.views import get_greeting_by_time
 from src.services import increased_cashback
+from src.utils import (
+    get_top_transactions,
+    process_card_data,
+    read_card_data_from_excel,
+    request_currency_data,
+    request_stocks_data,
+)
+from src.views import get_greeting_by_time
 
 BASE_DIR = Path(__file__).resolve().parent
 file_path = BASE_DIR / "data" / "operations.xlsx"  # выносим в общую переменную
@@ -44,7 +46,7 @@ if __name__ == "__main__":
     result = increased_cashback(df, 2021, 1)
 
     # Обрабатываем результат
-    if hasattr(result, 'to_dict'):
+    if hasattr(result, "to_dict"):
         result_dict = {k: abs(int(v / 100)) for k, v in result.to_dict().items()}
         print("\nРезультат расчета кэшбэка:")
         print(json.dumps(result_dict, ensure_ascii=False, indent=2))

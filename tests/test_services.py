@@ -1,5 +1,5 @@
-import pytest
 import pandas as pd
+
 from src.services import increased_cashback
 
 
@@ -10,11 +10,7 @@ def test_increased_cashback_success(sample_dataframe):
     # Превращаем Series в словарь
     result_dict = result.to_dict()
 
-    expected = {
-        'Супермаркеты': -1500,
-        'Транспорт': -300,
-        'Рестораны': -1000
-    }
+    expected = {"Супермаркеты": -1500, "Транспорт": -300, "Рестораны": -1000}
 
     assert result_dict == expected
 

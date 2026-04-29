@@ -1,8 +1,11 @@
-import math, json, requests, os
-from dotenv import load_dotenv
+import json
+import math
+import os
 from pathlib import Path
 
 import pandas as pd
+import requests
+from dotenv import load_dotenv
 from pandas import DataFrame
 
 load_dotenv()
@@ -15,31 +18,65 @@ API_KEY = os.getenv("API_KEY")
 
 def request_currency_data():
     """Функция для получения котировок валют"""
-    """ Читаем json-файл с валютами """
-    with open(json_path, "r", encoding="utf-8") as json_file:
-        settings = json.load(json_file)
+    # Читаем json-файл с валютами
+    try:
+        with open(json_path, "r", encoding="utf-8") as json_file:
+            settings = json.load(json_file)
+    except FileNotFoundError:
+        print(f"Файл настроек не найден: {json_path}")
+        return []
+    except json.JSONDecodeError as e:
+        print(f"Ошибка в JSON файле: {e}")
+        return []
 
-    """ API-запрос для получения курсов всех валют """
+    # Проверяем наличие ключа user_currencies
+    user_currencies = settings.get("user_currencies", [])
+    if not user_currencies:
+        print("Список валют пуст")
+        return []
+
+    # API-запрос для получения курсов всех валют
     url = "https://www.cbr-xml-daily.ru/daily_json.js"
-    response = requests.get(url)
-    data = response.json()
 
-    """ Формирование словаря с курсами валют согласно user_settings """
+    try:
+        response = requests.get(url, timeout=10)
+
+        # Проверяем статус ответа
+        if response.status_code != 200:
+            print(f"API вернул код ошибки: {response.status_code}")
+            return []
+
+        data = response.json()
+
+    except requests.exceptions.Timeout:
+        print("Таймаут при запросе к API")
+        return []
+    except requests.exceptions.ConnectionError:
+        print("Ошибка подключения к API")
+        return []
+    except requests.exceptions.RequestException as e:
+        print(f"Ошибка при запросе к API: {e}")
+        return []
+    except json.JSONDecodeError as e:
+        print(f"Ошибка при обработке JSON: {e}")
+        return []
+
+    # Формирование списка с курсами валют согласно user_settings
     currency_rates = []
-    index_currency = 0
-    len_list_of_currencies = len(settings["user_currencies"])
-    while index_currency < len_list_of_currencies:
-        currency_code = settings["user_currencies"][index_currency]
+
+    for currency_code in user_currencies:
         try:
-            currency_rate = data["Valute"][settings["user_currencies"][index_currency]][
-                "Value"
-            ]
+            currency_rate = data["Valute"][currency_code]["Value"]
             currency_rates.append(
                 {"currency": currency_code, "rate": round(float(currency_rate), 2)}
             )
         except KeyError:
             print(f"Валюта {currency_code} не найдена, пропускаем")
-        index_currency += 1
+
+    # Если список валют не пустой, но результат пуст — выводим сообщение
+    if user_currencies and not currency_rates:
+        print("Не удалось получить курсы валют")
+
     return currency_rates
 
 

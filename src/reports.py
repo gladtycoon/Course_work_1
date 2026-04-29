@@ -2,6 +2,7 @@ import json
 from datetime import datetime
 from functools import wraps
 from pathlib import Path
+
 import pandas as pd
 from pandas import DataFrame
 
@@ -14,6 +15,10 @@ def report_to_file(filename: str = None):
     Без параметра: создает файл с именем report_ГГГГ-ММ-ДД_ЧЧ-ММ-СС.json
     С параметром: создает файл с указанным именем
     """
+
+    # Создаем папку для отчетов (на уровень выше, в папке data)
+    reports_dir = Path(__file__).resolve().parent.parent / "reports"
+    reports_dir.mkdir(exist_ok=True)
 
     def decorator(func):
         @wraps(func)
@@ -28,20 +33,16 @@ def report_to_file(filename: str = None):
             else:
                 output_filename = filename
 
-            # Создаем папку для отчетов (на уровень выше, в корне проекта)
-            reports_dir = Path(__file__).resolve().parent.parent / "reports"
-            reports_dir.mkdir(exist_ok=True)
-
             # Полный путь к файлу
             file_path = reports_dir / output_filename
 
             # Сохраняем результат
-            with open(file_path, 'w', encoding='utf-8') as f:
+            with open(file_path, "w", encoding="utf-8") as f:
                 if isinstance(result, dict):
                     json.dump(result, f, ensure_ascii=False, indent=2)
                 elif isinstance(result, (list, tuple)):
                     json.dump(result, f, ensure_ascii=False, indent=2)
-                elif hasattr(result, 'to_dict'):
+                elif hasattr(result, "to_dict"):
                     json.dump(result.to_dict(), f, ensure_ascii=False, indent=2)
                 else:
                     json.dump(result, f, ensure_ascii=False, indent=2)
@@ -67,21 +68,27 @@ def read_card_data_from_excel(file_path: Path) -> DataFrame:
 
 # ========== ОТЧЕТ №1: УВЕЛИЧЕННЫЙ КЭШБЭК ==========
 @report_to_file()  # без параметра — автоматическое имя
-def increased_cashback_report(df: DataFrame, user_input_year: int, user_input_month: int) -> dict:
+def increased_cashback_report(
+    df: DataFrame, user_input_year: int, user_input_month: int
+) -> dict:
     """Отчет: расчет увеличенного кэшбэка по категориям"""
     if df is None or df.empty:
         return {}
 
-    if not pd.api.types.is_datetime64_any_dtype(df['Дата платежа']):
-        df['Дата платежа'] = pd.to_datetime(df['Дата платежа'], dayfirst=True, errors='coerce')
+    if not pd.api.types.is_datetime64_any_dtype(df["Дата платежа"]):
+        df["Дата платежа"] = pd.to_datetime(
+            df["Дата платежа"], dayfirst=True, errors="coerce"
+        )
 
-    mask = (df['Дата платежа'].dt.year == user_input_year) & (df['Дата платежа'].dt.month == user_input_month)
+    mask = (df["Дата платежа"].dt.year == user_input_year) & (
+        df["Дата платежа"].dt.month == user_input_month
+    )
     filtered_data = df[mask].copy()
 
     if filtered_data.empty:
         return {}
 
-    result = filtered_data.groupby('Категория')['Сумма операции'].sum()
+    result = filtered_data.groupby("Категория")["Сумма операции"].sum()
     result_dict = {k: abs(int(v)) for k, v in result.to_dict().items()}
 
     return result_dict
@@ -89,21 +96,27 @@ def increased_cashback_report(df: DataFrame, user_input_year: int, user_input_mo
 
 # ========== ОТЧЕТ №2: С УКАЗАННЫМ ИМЕНЕМ ФАЙЛА ==========
 @report_to_file("cashback_january_2021.json")  # с параметром — указанное имя
-def increased_cashback_report_named(df: DataFrame, user_input_year: int, user_input_month: int) -> dict:
+def increased_cashback_report_named(
+    df: DataFrame, user_input_year: int, user_input_month: int
+) -> dict:
     """Отчет с сохранением в указанный файл"""
     if df is None or df.empty:
         return {}
 
-    if not pd.api.types.is_datetime64_any_dtype(df['Дата платежа']):
-        df['Дата платежа'] = pd.to_datetime(df['Дата платежа'], dayfirst=True, errors='coerce')
+    if not pd.api.types.is_datetime64_any_dtype(df["Дата платежа"]):
+        df["Дата платежа"] = pd.to_datetime(
+            df["Дата платежа"], dayfirst=True, errors="coerce"
+        )
 
-    mask = (df['Дата платежа'].dt.year == user_input_year) & (df['Дата платежа'].dt.month == user_input_month)
+    mask = (df["Дата платежа"].dt.year == user_input_year) & (
+        df["Дата платежа"].dt.month == user_input_month
+    )
     filtered_data = df[mask].copy()
 
     if filtered_data.empty:
         return {}
 
-    result = filtered_data.groupby('Категория')['Сумма операции'].sum()
+    result = filtered_data.groupby("Категория")["Сумма операции"].sum()
     result_dict = {k: abs(int(v)) for k, v in result.to_dict().items()}
 
     return result_dict
